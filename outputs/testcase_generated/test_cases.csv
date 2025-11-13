@@ -1,0 +1,5 @@
+TestID,Title,Steps,Expected,Priority
+TC-001,Email Validation,Check email format using [user@domain.com],Expected valid email address.,Medium
+TC-002,Password Validity Check,Validate username includes [a-zA-Z0-9]+ | Check password has at least one uppercase letter; number; and special character | Ensure all parts are present in the password,Valid password meets requirements.,Medium
+TC-003,OTP Verification,Mobile number must be different from current email,Mobile number unique and different from email address.,Medium
+TC-004,Redirect to Welcome Page,Redirect users after successful signup,Redirected to welcome page after successful registration.,Medium

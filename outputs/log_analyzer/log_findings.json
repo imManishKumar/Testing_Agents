@@ -1,0 +1,154 @@
+{
+  "groups": [
+    {
+      "signature": "starting application qa agent",
+      "count": 1,
+      "levels": {
+        "INFO": 1,
+        "WARN": 0,
+        "ERROR": 0
+      },
+      "examples": [
+        "2025-08-20 08:00:01 [INFO]  Starting application: qa-agent-service v1.2.0"
+      ],
+      "probable_root_cause": "Configuration issues in the application's QA agent",
+      "recommendation": "Check application logs for potential configuration errors"
+    },
+    {
+      "signature": "database connection pool initialized",
+      "count": 1,
+      "levels": {
+        "INFO": 1,
+        "WARN": 0,
+        "ERROR": 0
+      },
+      "examples": [
+        "2025-08-20 08:00:03 [INFO]  Database connection pool initialized (size=10)"
+      ],
+      "probable_root_cause": "Insufficient memory allocation for database connections",
+      "recommendation": "Monitor memory usage and increase pool size if necessary"
+    },
+    {
+      "signature": "failed to warm cache",
+      "count": 1,
+      "levels": {
+        "INFO": 0,
+        "WARN": 0,
+        "ERROR": 1
+      },
+      "examples": [
+        "2025-08-20 08:00:05 [ERROR] Failed to warm cache: redis://localhost:6379 - ConnectionRefusedError"
+      ],
+      "probable_root_cause": "ConnectionRefusedError",
+      "recommendation": "Investigate ConnectionRefusedError and related services"
+    },
+    {
+      "signature": "health check passed",
+      "count": 1,
+      "levels": {
+        "INFO": 1,
+        "WARN": 0,
+        "ERROR": 0
+      },
+      "examples": [
+        "2025-08-20 08:00:08 [INFO]  Health check passed: /health → 200"
+      ],
+      "probable_root_cause": "",
+      "recommendation": ""
+    },
+    {
+      "signature": "telemetry upload delayed service",
+      "count": 1,
+      "levels": {
+        "INFO": 0,
+        "WARN": 1,
+        "ERROR": 0
+      },
+      "examples": [
+        "2025-08-20 08:00:14 [WARN]  Telemetry upload delayed: 503 Service Unavailable"
+      ],
+      "probable_root_cause": "",
+      "recommendation": ""
+    },
+    {
+      "signature": "unable to bind to",
+      "count": 1,
+      "levels": {
+        "INFO": 0,
+        "WARN": 0,
+        "ERROR": 1
+      },
+      "examples": [
+        "2025-08-20 08:00:18 [ERROR]  Unable to bind to metrics port 9100 - Address already in use"
+      ],
+      "probable_root_cause": "",
+      "recommendation": ""
+    },
+    {
+      "signature": "template rendering failed for",
+      "count": 1,
+      "levels": {
+        "INFO": 0,
+        "WARN": 0,
+        "ERROR": 1
+      },
+      "examples": [
+        "2025-08-20 08:00:25 [ERROR]  Template rendering failed for index page"
+      ],
+      "probable_root_cause": "",
+      "recommendation": ""
+    },
+    {
+      "signature": "session store reports io",
+      "count": 1,
+      "levels": {
+        "INFO": 0,
+        "WARN": 0,
+        "ERROR": 1
+      },
+      "examples": [
+        "2025-08-20 08:00:30 [ERROR]  Session store reports IO errors for key writes"
+      ],
+      "probable_root_cause": "",
+      "recommendation": ""
+    },
+    {
+      "signature": "disk pressure detected is",
+      "count": 1,
+      "levels": {
+        "INFO": 0,
+        "WARN": 1,
+        "ERROR": 0
+      },
+      "examples": [
+        "2025-08-20 08:00:42 [WARN]  Disk pressure detected: /var is 88% full"
+      ],
+      "probable_root_cause": "",
+      "recommendation": ""
+    },
+    {
+      "signature": "startup complete system ready",
+      "count": 1,
+      "levels": {
+        "INFO": 1,
+        "WARN": 0,
+        "ERROR": 0
+      },
+      "examples": [
+        "2025-08-20 08:00:43 [INFO]  Startup complete; system ready with warnings"
+      ],
+      "probable_root_cause": "",
+      "recommendation": ""
+    }
+  ],
+  "summary": {
+    "total_events": 10,
+    "error_rate": 0.4,
+    "top_signatures": [
+      "failed to warm cache",
+      "unable to bind to",
+      "template rendering failed for"
+    ],
+    "short_summary": "10 events → 4 errors, 2 warnings, 4 info (error rate 40%). Top errors: failed to warm cache, unable to bind to, template rendering failed for."
+  }
+}

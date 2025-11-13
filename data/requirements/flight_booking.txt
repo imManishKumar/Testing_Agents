@@ -1,0 +1,9 @@
+Requirement: The system shall allow users to book a flight ticket.
+
+Details:
+- Users should be able to search for flights by source, destination, and date.
+- The system should display available flights with prices and seat classes.
+- Users must be able to select seats during booking.
+- Payment must be processed using credit card, debit card, or digital wallet.
+- If payment fails, the system should display an error and allow retry.
+- After successful payment, a booking confirmation email should be sent.

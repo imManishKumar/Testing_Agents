@@ -1,0 +1,9 @@
+Requirement: The e-commerce platform shall allow users to add, view, and remove items in a shopping cart.
+
+Details:
+- Users can add products to the cart from the product listing or product detail page.
+- The cart should display the product name, quantity, and price.
+- Users can update the quantity of each product.
+- Removing a product should update the total price immediately.
+- The cart should persist if the user logs out and logs back in.
+- A “Proceed to Checkout” button should be available when the cart has at least one item.

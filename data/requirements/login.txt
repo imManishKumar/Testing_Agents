@@ -1,0 +1,7 @@
+Requirement: The system shall allow users to log in using their registered email and password.
+
+Details:
+- If the password is entered incorrectly 3 times, the account should be locked for 10 minutes.
+- Users should have an option to reset their password via the "Forgot Password" link.
+- Successful login should redirect the user to their dashboard.
+- Error messages must be displayed for invalid credentials.

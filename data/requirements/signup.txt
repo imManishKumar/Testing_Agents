@@ -1,0 +1,8 @@
+Requirement: The system shall allow new users to sign up using their email address, mobile number, and a password.
+
+Details:
+- The email must be validated for correct format.
+- The password must have at least 8 characters, including one uppercase letter, one number, and one special character.
+- A One-Time Password (OTP) should be sent to the user’s mobile number for verification.
+- Users cannot register with an email address that is already in use.
+- After successful signup, users should be redirected to a welcome page.

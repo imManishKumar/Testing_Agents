@@ -1,0 +1,33 @@
+[
+  {
+    "id": "TC-001",
+    "title": "Email Validation",
+    "steps": ["Check email format using [user@domain.com]"],
+    "expected": "Expected valid email address.",
+    "priority": "Medium"
+  },
+  {
+    "id": "TC-002",
+    "title": "Password Validity Check",
+    "steps": [
+      "Validate username includes [a-zA-Z0-9]+",
+      "Check password has at least one uppercase letter, number, and special character",
+      "Ensure all parts are present in the password"
+    ],
+    "expected": "Valid password meets requirements.",
+    "priority": "Medium"
+  },
+  {
+    "id": "TC-003",
+    "title": "OTP Verification",
+    "steps": ["Mobile number must be different from current email"],
+    "expected": "Mobile number unique and different from email address.",
+    "priority": "Medium"
+  },
+  {
+    "id": "TC-004",
+    "title": "Redirect to Welcome Page",
+    "steps": ["Redirect users after successful signup"],
+    "expected": "Redirected to welcome page after successful registration."
+  }
+]
