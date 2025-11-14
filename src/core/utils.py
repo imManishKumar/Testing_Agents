@@ -42,6 +42,42 @@ def parse_json_safely(text: str, raw_path: Path) -> List[Dict]:
         return data
 
 ### Look details of each functions in notion page ###
+def to_rows_edgecase(cases: List[Dict]) -> List[List[str]]:
+    rows: List[List[str]] = []
+    for i, c in enumerate(cases, start=1):
+        tid = str(c.get("id") or f"TC-{i:03d}")
+        title = str(c.get("title") or "").strip()
+        steps_list = c.get("steps") or []
+        if not isinstance(steps_list, list):
+            steps_list = [str(steps_list)]
+        steps = " | ".join(str(s).strip() for s in steps_list if str(s).strip())
+        expected = str(c.get("expected") or "").strip()
+        priority = str(c.get("priority") or "Medium").strip()
+        tags = str(c.get("tags") or "edge").strip()
+        likelihood = str(c.get("likelihood") or "Common").strip()
+        rows.append([tid, title, steps, expected, priority, tags, likelihood])
+    return rows
+
+### Look details of each functions in notion page ###
+def write_csv_edgecase(rows: List[List[str]], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    header = ["TestID", "Title", "Steps", "Expected", "Priority", "Tags", "Likelihood"]
+    lines = [",".join(header)]
+    for r in rows:
+        escaped = [field.replace(",", ";") for field in r]
+        lines.append(",".join(escaped))
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+### Look details of each functions in notion page ###
+def write_json(obj: object, path: Path) -> None:
+    """Write an object as pretty JSON to `path`, creating parent dirs.
+
+    Useful shared helper for agents that need to emit JSON outputs.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(obj, indent=2, ensure_ascii=False), encoding="utf-8")
+
+### Look details of each functions in notion page ###
 def to_rows(cases: List[Dict]) -> List[List[str]]:
     rows: List[List[str]] = []
     for i, c in enumerate(cases, start=1):
@@ -65,12 +101,3 @@ def write_csv(rows: List[List[str]], path: Path) -> None:
         escaped = [field.replace(",", ";") for field in r]
         lines.append(",".join(escaped))
     path.write_text("\n".join(lines), encoding="utf-8")
-
-### Look details of each functions in notion page ###
-def write_json(obj: object, path: Path) -> None:
-    """Write an object as pretty JSON to `path`, creating parent dirs.
-
-    Useful shared helper for agents that need to emit JSON outputs.
-    """
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, indent=2, ensure_ascii=False), encoding="utf-8")

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "TC-001",
+    "title": "Password Lockout",
+    "steps": [
+      "User enters incorrect password 3 times, system locks account for 10 minutes",
+      "Check if lockout duration is set to 10 minutes",
+      "Verify the lockout duration is correctly applied",
+      "Test with a different password to confirm",
+      "Ensure no session is reset after lockout",
+      "Verify session is invalidated correctly"
+    ],
+    "expected": "Account is locked for 10 minutes",
+    "priority": "High",
+    "tags": ["edge"],
+    "likelihood": "Rare"
+  },
+  {
+    "id": "TC-002",
+    "title": "Password Reset",
+    "steps": [
+      "User attempts to reset password via 'Forgot Password' link",
+      "System displays a password reset confirmation",
+      "Check if reset process is initiated successfully",
+      "Verify the user receives the confirmation email",
+      "Test with invalid credentials to confirm link availability",
+      "Ensure no system errors occur during reset"
+    ],
+    "expected": "Password reset process initiated",
+    "priority": "Medium",
+    "tags": ["edge"],
+    "likelihood": "Common"
+  },
+  {
+    "id": "TC-003",
+    "title": "Error Message Display",
+    "steps": [
+      "User enters invalid credentials, system shows error message",
+      "Check if error message is displayed correctly",
+      "Verify the message includes required fields",
+      "Test with multiple failed attempts",
+      "Ensure the error message is not redundant",
+      "Check if the error message is localized"
+    ],
+    "expected": "Error message displayed for invalid credentials",
+    "priority": "Low",
+    "tags": ["negative"],
+    "likelihood": "Rare"
+  },
+  {
+    "id": "TC-004",
+    "title": "Dashboard Redirect",
+    "steps": [
+      "Successful login redirect to dashboard",
+      "Verify the redirect URL is correct",
+      "Check if the user is redirected to the dashboard",
+      "Test with a different user or session",
+      "Ensure no redirects occur after lockout",
+      "Check if the redirect is successful"
+    ],
+    "expected": "Redirect to dashboard",
+    "priority": "Medium",
+    "tags": ["happy"],
+    "likelihood": "Common"
+  },
+  {
+    "id": "TC-005",
+    "title": "Password Reset Confirmation",
+    "steps": [
+      "User attempts to reset password with incorrect credentials",
+      "System displays password reset confirmation",
+      "Check if confirmation is sent",
+      "Verify the user receives the confirmation email",
+      "Test with invalid credentials to confirm link availability",
+      "Ensure no system errors occur during reset"
+    ],
+    "expected": "Password reset process initiated",
+    "priority": "Low",
+    "tags": ["edge"],
+    "likelihood": "Rare"
+  },
+  {
+    "id": "TC-006",
+    "title": "Invalid Credentials Error",
+    "steps": [
+      "User enters invalid credentials",
+      "System displays error message",
+      "Check if the error message is correctly displayed",
+      "Test with multiple failed attempts",
+      "Verify the error message includes required fields",
+      "Ensure the error message is localized"
+    ],
+    "expected": "Error message displayed for invalid credentials",
+    "priority": "Medium",
+    "tags": ["negative"],
+    "likelihood": "Common"
+  }
+]
