@@ -7,7 +7,7 @@ Keep this file small: its purpose is purely convenience for teaching and
 to keep example agent files short and readable.
 """
 
-from .llm_client import chat
+from .llm_client import chat,chat_lc
 from .utils import pick_requirement, parse_json_safely, to_rows, write_csv, write_json,to_rows_edgecase, write_csv_edgecase
 
 __all__ = [

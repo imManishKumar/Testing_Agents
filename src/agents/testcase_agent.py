@@ -3,38 +3,21 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import List, Dict
+from langchain_core.prompts import PromptTemplate
+from src.core import chat, pick_requirement, parse_json_safely, to_rows, write_csv,chat_lc
 
-from src.core import chat, pick_requirement, parse_json_safely, to_rows, write_csv
-
-# Paths (easy-to-change constants for students)
+# Paths 
 ROOT = Path(__file__).resolve().parents[2]
 REQ_DIR = ROOT / "data" / "requirements"  # directory with .txt requirement files
 OUT_DIR = ROOT / "outputs" / "testcase_generated"  # where outputs are written
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_CSV = OUT_DIR / "test_cases.csv"  # CSV output path
 LAST_RAW_JSON = OUT_DIR / "last_raw.json"  # file where raw LLM text is saved
+PROMPT_DIR = ROOT / "src" / "core" / "prompts"
+SYSTEM_PROMPT = (PROMPT_DIR / "testcase_system.txt").read_text(encoding="utf-8")
+USER_TEMPLATE = (PROMPT_DIR / "testcase_user.txt").read_text(encoding="utf-8")
 
-SYSTEM_PROMPT = """You are a senior QA assistant.
-Think step-by-step about the requirement and produce ONLY a JSON array of
-test cases using this schema:
-
-[
-  {
-    "id": "TC-001",
-    "title": "Short test title",
-    "steps": ["step 1", "step 2"],
-    "expected": "Expected result",
-    "priority": "High|Medium|Low"
-  }
-]
-
-Rules:
-- Return JSON ONLY (no prose, no fences).
-- Provide 5 test cases for a typical requirement.
-- Steps should be short, imperative, and precise.
-"""
-
-USER_TEMPLATE = 'Requirement:\n"""{requirement_text}"""'  # user content injected
+#USER_TEMPLATE = 'Requirement:\n"""{requirement_text}"""'  # user content injected
 # `USER_TEMPLATE` wraps the requirement text so the model sees a clear input
 # block; we keep it simple for students to inspect and modify.
 
@@ -66,16 +49,16 @@ def main() -> None:
 
     messages: List[Message] = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {
-            "role": "user",
-            "content": USER_TEMPLATE.format(requirement_text=requirement_text),
-        },
+        {"role": "user","content": USER_TEMPLATE.format(requirement_text=requirement_text)},
     ]
 
     # Call the LLM via the provider-agnostic `chat` function. The returned
     # `raw` is the assistant's text; for Day-1 we expect the model to return
     # a pure JSON array (see SYSTEM_PROMPT) so downstream parsing is simple.
-    raw = chat(messages)
+    
+    #raw = chat(messages)
+    #for langchain use below method defined by me for understanding purpose
+    raw = chat_lc(messages)
 
     try:
         cases = parse_json_safely(raw, LAST_RAW_JSON)

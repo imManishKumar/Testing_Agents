@@ -101,3 +101,4 @@ def write_csv(rows: List[List[str]], path: Path) -> None:
         escaped = [field.replace(",", ";") for field in r]
         lines.append(",".join(escaped))
     path.write_text("\n".join(lines), encoding="utf-8")
+    

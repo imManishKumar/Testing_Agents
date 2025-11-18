@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import List, Dict
 
-from src.core import chat, pick_requirement, parse_json_safely, to_rows_edgecase, write_csv_edgecase
+from src.core import chat, pick_requirement, parse_json_safely, to_rows_edgecase, write_csv_edgecase, chat_lc
 
 # Paths (easy-to-change constants for students)
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,32 +14,8 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_CSV = OUT_DIR / "test_cases.csv"  # CSV output path
 LAST_RAW_JSON = OUT_DIR / "last_raw.json"  # file where raw LLM text is saved
 
-SYSTEM_PROMPT = """You are a senior QA assistant.
-From the user template/requirement content prepare concise edge cases and negative cases.
-Think step-by-step about the requirement and produce ONLY a JSON array of
-test cases using this schema:
-
-[
-  {
-    "id": "TC-001",
-    "title": "Short test title",
-    "steps": ["step 1", "step 2"],
-    "expected": "Expected result",
-    "priority": "High|Medium|Low",
-    "tags" : ["edge" | "negative" | "happy"],
-    "likelihood": "Rare|Uncommon|Common|Frequent"
-  }
-]
-
-Rules:
-- Return JSON ONLY (no prose, no fences).
-- Provide at least 6 and at most 12 cases. At least 30% must be tagged as edge or negative.
-- Steps should be short, imperative, and precise.
-"""
-
-USER_TEMPLATE = 'Requirement:\n"""{requirement_text}"""'  # user content injected
-# `USER_TEMPLATE` wraps the requirement text so the model sees a clear input
-# block; we keep it simple for students to inspect and modify.
+SYSTEM_PROMPT = (ROOT / "src" / "core" / "prompts" / "edgecase_negative_system.txt").read_text(encoding="utf-8")
+USER_TEMPLATE = (ROOT / "src" / "core" / "prompts" / "edgecase_negative_user.txt").read_text(encoding="utf-8")
 
 Message = Dict[str, str]
 
@@ -78,7 +54,7 @@ def main() -> None:
     # Call the LLM via the provider-agnostic `chat` function. The returned
     # `raw` is the assistant's text; for Day-1 we expect the model to return
     # a pure JSON array (see SYSTEM_PROMPT) so downstream parsing is simple.
-    raw = chat(messages)
+    raw = chat_lc(messages)
 
     try:
         cases = parse_json_safely(raw, LAST_RAW_JSON)
