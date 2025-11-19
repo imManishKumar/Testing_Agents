@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Dict
 
 from src.core import chat, pick_requirement, parse_json_safely, to_rows_edgecase, write_csv_edgecase, chat_lc
+import logging
 
 # Paths (easy-to-change constants for students)
 ROOT = Path(__file__).resolve().parents[2]
@@ -39,6 +40,11 @@ def main() -> None:
       can extend it later to add retries, rate-limiting, human-in-the-loop
       review pages, or direct integrations with Jira/TestRail.
     """
+    #logger config steps
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+    )
+    logger = logging.getLogger(__name__)
 
     req_path = pick_requirement(sys.argv[1] if len(sys.argv) > 1 else None, REQ_DIR)
     requirement_text = req_path.read_text(encoding="utf-8").strip()
@@ -54,6 +60,7 @@ def main() -> None:
     # Call the LLM via the provider-agnostic `chat` function. The returned
     # `raw` is the assistant's text; for Day-1 we expect the model to return
     # a pure JSON array (see SYSTEM_PROMPT) so downstream parsing is simple.
+    logger.info("Calling chat: provider payload msgs=%d (sys=1,user=1)", len(messages))
     raw = chat_lc(messages)
 
     try:
@@ -61,6 +68,10 @@ def main() -> None:
     except Exception as e:
         # gentle retry nudge — a pragmatic teaching technique: show how a
         # small reminder can correct common model format mistakes.
+        logger.exception(
+            "Initial parse_json_safely failed; will nudge and retry. Raw saved at %s",
+            LAST_RAW_JSON,
+        )
         nudge = (
             raw + "\n\nREMINDER: Return a pure JSON array only, matching the schema."
         )
@@ -69,6 +80,9 @@ def main() -> None:
         except Exception:
             # Surface a clear runtime error with a pointer to the saved raw
             # output so students can debug model responses during the session.
+            logger.error(
+                "Could not parse model output after nudge; see %s", LAST_RAW_JSON
+            )
             raise RuntimeError(
                 f"Could not parse model output as JSON. See {LAST_RAW_JSON}.\nError: {e}"
             )
@@ -76,8 +90,8 @@ def main() -> None:
     rows = to_rows_edgecase(cases)
     write_csv_edgecase(rows, OUT_CSV)
 
-    print(f"✅ Wrote {len(rows)} test cases to: {OUT_CSV.relative_to(ROOT)}")
-    print(f"ℹ️  Raw model output saved at: {LAST_RAW_JSON.relative_to(ROOT)}")
+    logger.info(f"✅ Wrote {len(rows)} test cases to: {OUT_CSV.relative_to(ROOT)}")
+    logger.info(f"ℹ️  Raw model output saved at: {LAST_RAW_JSON.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

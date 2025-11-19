@@ -5,6 +5,8 @@ import httpx  # not required using langchain
 from dotenv import load_dotenv
 from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+import logging
+import time
 
 load_dotenv(override=True)
 
@@ -13,6 +15,10 @@ MODEL = (os.getenv("MODEL") or "mistral:7b").strip()
 OLLAMA_HOST = (os.getenv("OLLAMA_HOST") or "http://localhost:11434").strip()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or ""
 TIMEOUT_S = int(os.getenv("LLM_TIMEOUT_S") or "600")
+LLM_LOG = (os.getenv("LLM_LOG") or "0").strip().lower() 
+LLM_DEBUG = (os.getenv("LLM_DEBUG") or "0").strip().lower()
+logger = logging.getLogger(__name__)
+
 # No temperature handling for Day-1: keep payloads simple and compatible.
 LLM_TEMPERATURE = None
 
@@ -125,10 +131,46 @@ def chat_lc(messages: List[Message], timeout: int = TIMEOUT_S) -> str:
     """
     if not isinstance(messages, list) or not messages:
         raise ValueError("messages must be a non-empty list of {'role','content'} dicts.")
+    
+    # Logger for LLM calls from prompts to LLM response
+    if LLM_LOG:
+        n_sys = sum(1 for m in messages if (m.get("role") or "").lower() == "system")
+        n_usr = sum(1 for m in messages if (m.get("role") or "").lower() in ("user", "human"))
+        n_ast = sum(1 for m in messages if (m.get("role") or "").lower() in ("assistant", "ai"))
+        msg_count = len(messages)
+
+        size_info = ""
+        if LLM_DEBUG:
+            lengths = [len(m.get("content") or "") for m in messages]
+            size_info = f" | chars={sum(lengths)} total, per_msg={lengths}"
+
+        logger.info(
+            "[LLM] ▶ start provider=%s model=%s msgs=%d (sys=%d, user=%d, asst=%d)%s",
+            PROVIDER,
+            MODEL,
+            msg_count,
+            n_sys,
+            n_usr,
+            n_ast,
+            size_info,
+        )
+    #t0 is for starting time measurement before making LLM call
+    t0 = time.perf_counter()
 
     llm = _make_llm()
     lc_msgs = _to_lc_messages(messages)
 
-    # Call the model; avoid per-call config to keep compatibility wide.
-    resp = llm.invoke(lc_msgs)
-    return getattr(resp, "content", "") or ""
+    try:
+        resp = llm.invoke(lc_msgs)
+        out = getattr(resp, "content", "") or ""
+        dt = time.perf_counter() - t0 #dt is measuring total time between LLM call start and end by subtracting t0 from current time
+        if LLM_LOG:
+            logger.info("[LLM] ✔ done in %.2fs", dt)
+        if LLM_DEBUG:
+            logger.debug("[LLM] response length=%d", len(out))
+        return out
+    except Exception as e:
+        dt = time.perf_counter() - t0
+        if LLM_LOG:
+            logger.error("[LLM] ✘ error after %.2fs: %s", dt, type(e).__name__)
+        raise
