@@ -6,8 +6,10 @@ import re
 import json
 import argparse
 
-from src.core import chat
+from src.core import chat,chat_lc
 from src.core.utils import write_json
+from langchain_core.prompts import PromptTemplate
+import logging
 
 #part-1 Parsing & Grouping
 
@@ -85,25 +87,23 @@ def build_llm_messages(groups: list, total_events: int, top_n: int = 3) -> list:
         if exs:
             g["exceptions"] = exs
 
-    system = (
-        "You are a concise QA log analysis assistant.\n"
-        "Return JSON ONLY (no prose, no fences) with exactly two top-level keys: `groups` and `summary`.\n"
-        "Return a group for EVERY input `signature` and do NOT invent, drop, or rename groups. Echo each `signature` exactly and keep the same order.\n"
-        "Each group must include: `signature`, `count`, `levels`, `examples`, `probable_root_cause`, `recommendation`.\n"
-        "`summary` must include: `total_events` (int), `error_rate` (0-1 float), `top_signatures` (array), and `short_summary` (<=3 sentences).\n"
-        "Keep `probable_root_cause` and `recommendation` concise (<=200 chars). Do not add extra top-level keys.\n"
-        "Rules:- Return JSON ONLY (no prose, no fences)."
-    )
+    #read prompts 
+    ROOT = Path(__file__).resolve().parents[2]
+    PROMPTS_DIR = ROOT / "src" / "core" / "prompts"
 
-    user = "INPUT payload (pre-aggregated groups and totals):\n" + json.dumps(
-        {"groups": payload, "total_events": total_events}, indent=2
-    )
+    system = (PROMPTS_DIR / "log_system.txt").read_text(encoding="utf-8")
+    user_template_str = (PROMPTS_DIR / "log_user.txt").read_text(encoding="utf-8")
+    user_template = PromptTemplate.from_template(user_template_str)
+
+    user_payload = json.dumps({"groups": payload, "total_events": total_events}, indent=2)
+
+    user =  user_template.format(payload_json=user_payload)
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
 def call_llm(messages: list, timeout: int) -> str:
     """Thin wrapper over core chat client (returns raw string)."""
-    return chat(messages, timeout=timeout)
+    return chat_lc(messages, timeout=timeout)
 
 
 # def parse_llm_output(raw: str) -> dict:
@@ -155,6 +155,13 @@ def parse_llm_output(raw: str) -> dict:
 #part-3 CLI Entry
 
 def main(argv: Optional[list] = None) -> None:
+    #logger
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+    )
+    logger = logging.getLogger(__name__)
+
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--inputs", nargs="+", required=True)
     parser.add_argument("--timeout", type=int, default=600, help="LLM timeout seconds")
@@ -169,12 +176,22 @@ def main(argv: Optional[list] = None) -> None:
     # parse & group
     paths = [Path(p) for p in args.inputs]
     lines = list(load_logs(paths))
+    logger.info("Read %d lines from inputs=%s", len(lines), paths)
+    logger.debug("First 3 lines: %s", lines[:3])
     groups = group_events(lines)
+    logger.info("Grouped into %d signatures", len(groups))
+    logger.debug("Top signatures: %s", [g["signature"] for g in groups[:5]])
     total = sum(g["count"] for g in groups)
 
     # Option A (1): send ALL groups when --llm-top = -1
     llm_top = len(groups) if args.llm_top < 0 else args.llm_top
     messages = build_llm_messages(groups, total, top_n=llm_top)
+
+    logger.info("Calling LLM with top_n=%d (total_events=%d)", args.llm_top, total)
+    logger.debug(
+        "LLM payload size=%d chars",
+        len(json.dumps({"groups": groups[: args.llm_top], "total_events": total})),
+    )
 
     # call LLM and parse
     raw = call_llm(messages, timeout=args.timeout)

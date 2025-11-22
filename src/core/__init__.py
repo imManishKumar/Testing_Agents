@@ -19,4 +19,5 @@ __all__ = [
     "write_json",
     "to_rows_edgecase",
     "write_csv_edgecase",
+    "chat_lc",
 ]

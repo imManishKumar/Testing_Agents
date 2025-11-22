@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import List, Dict
+import requests
+
 
 ### Look details of each functions in notion page ###
 
@@ -102,3 +104,16 @@ def write_csv(rows: List[List[str]], path: Path) -> None:
         lines.append(",".join(escaped))
     path.write_text("\n".join(lines), encoding="utf-8")
     
+# --- HTTP helpers (generic JSON) ---
+import requests  # keep dependency surface tiny
+
+def http_post_json(url: str, payload: dict, headers: dict | None = None, timeout: int = 60) -> dict:
+    r = requests.post(url, json=payload, headers=headers or {}, timeout=timeout)
+    r.raise_for_status()
+    return r.json()
+
+def http_get_json(url: str, headers: dict | None = None, timeout: int = 60) -> dict:
+    r = requests.get(url, headers=headers or {}, timeout=timeout)
+    r.raise_for_status()
+    return r.json()
+
