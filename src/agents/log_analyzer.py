@@ -10,6 +10,14 @@ from src.core import chat,chat_lc
 from src.core.utils import write_json
 from langchain_core.prompts import PromptTemplate
 import logging
+from src.integrations.jira import create_issue, JIRA_BASE
+from src.integrations.slack import post_message
+
+try:
+    from src.integrations.dedupe import seen_today, mark_today
+except Exception:
+    def seen_today(signature: str) -> bool: return False
+    def mark_today(signature: str, issue_key: str) -> None: pass
 
 #part-1 Parsing & Grouping
 
@@ -281,6 +289,96 @@ def main(argv: Optional[list] = None) -> None:
         encoding="utf-8",
     )
     print(f"Wrote {out_json} and {out_md}")
+
+    # --- Act: create ONE Jira per ERROR group, then ONE Slack summary ---
+    groups = findings.get("groups") or []
+    if not groups:
+        logger.info("No groups to report; skipping Jira/Slack.")
+        return
+
+    total_events = int(findings.get("summary", {}).get("total_events", 0) or 0)
+    error_rate = findings.get("summary", {}).get("error_rate", 0.0)
+
+    created: list[tuple[str, str, int]] = []  # (signature, issue_key, errors)
+
+    for g in groups:
+        levels = g.get("levels", {}) or {}
+        errors = int(levels.get("ERROR", 0) or 0)
+        if errors <= 0:
+            continue
+
+        sig = g.get("signature", "unknown")
+
+        # Optional daily dedupe (skip if same signature already filed today)
+        if seen_today(sig):
+            logger.info("Signature %r already reported today; skipping Jira create.", sig)
+            created.append((sig, "ALREADY_REPORTED", errors))
+            continue
+
+        # Prefer exception name for title; else use signature
+        exceptions = g.get("exceptions") or []
+        title_part = exceptions[0] if exceptions else sig
+        summary = f"[Auto] {title_part} ({errors} errors)"
+
+        # Richer description with RCA/recommendation and examples
+        rca = g.get("probable_root_cause") or "Not determined"
+        rec = g.get("recommendation") or "No recommendation"
+        example_block = "\n".join((g.get("examples") or [])[:3])
+
+        description = (
+            f"h2. Automated Log Analysis Report\n\n"
+            f"*Signature:* {sig}\n"
+            f"*Errors:* {errors} of {total_events} events (rate={error_rate:.1%})\n\n"
+            f"*Probable Root Cause:* {rca}\n"
+            f"*Recommendation:* {rec}\n\n"
+            f"*Examples:*\n"
+            f"{{code}}\n{example_block}\n{{code}}"
+        )
+
+        try:
+            jres = create_issue(summary=summary, description=description, issuetype="Bug")
+            issue_key = jres.get("key") or jres.get("id") or "UNKNOWN"
+            created.append((sig, str(issue_key), errors))
+            mark_today(sig, str(issue_key))
+            logger.info("Created Jira issue: %s for signature %r", issue_key, sig)
+        except Exception as e:
+            logger.error("Jira create failed for %r: %s", sig, e)
+
+            # One Slack summary (exception + recommendation + clickable Jira links)
+    try:
+        rate_pct = f"{float(error_rate) * 100:.1f}%"
+        lines = [":rotating_light: *Log Alert Summary*",
+                 f"*Total events:* {total_events}  •  *Error rate:* {rate_pct}"]
+
+        for sig, key, errs in created:
+            gmatch = next((gx for gx in groups if gx.get("signature") == sig), None)
+            exceptions = (gmatch.get("exceptions") if gmatch else []) or []
+            title = exceptions[0] if exceptions else sig
+            rec = (gmatch.get("recommendation") if gmatch else "") or ""
+            exs = (gmatch.get("examples") if gmatch else []) or []
+            example_1 = exs[0] if exs else ""
+
+            issue_url = f"{JIRA_BASE}/ui/issue/{key}" if key not in ("UNKNOWN", "ALREADY_REPORTED") else ""
+            jira_part = f"*Jira:* <{issue_url}|{key}>" if issue_url else f"*Jira:* {key}"
+
+            lines.append(f"• *{title}* — errors: {errs}  •  {jira_part}")
+            if rec:
+                lines.append(f"   ↳ _Recommendation:_ {rec}")
+            if example_1:
+                lines.append(f"```{example_1}```")
+
+        txt = "\n".join(lines)
+        _ = post_message(text=txt)
+        logger.info("Posted enriched Slack summary for %d issues.", len(created))
+    except Exception as e:
+        logger.error("Slack post failed: %s", e)
+
+
+    # If nothing had errors, stop here
+    if not created:
+        logger.info("No ERROR groups detected; skipping Slack summary.")
+        return
+
 
 
 if __name__ == "__main__":
