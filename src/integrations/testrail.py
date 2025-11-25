@@ -43,3 +43,18 @@ def list_cases(project_id: int | None = None) -> List[Dict[str, Any]]:
     data = http_get_json(url)
     assert isinstance(data, list), "Expected list from /cases/{project_id}"
     return data
+
+# Status ID legend (mock): 1=Passed, 2=Blocked, 3=Untested, 4=Retest, 5=Failed
+def add_result(
+    case_id: int,
+    status_id: int = 3,
+    comment: str | None = None,
+    elapsed: str | None = None
+) -> dict[str, Any]:
+    url = f"{TESTRAIL_BASE}/api/v2/results/{case_id}"
+    payload: dict[str, Any] = {"status_id": status_id}
+    if comment is not None:
+        payload["comment"] = comment
+    if elapsed is not None:
+        payload["elapsed"] = elapsed
+    return http_post_json(url, payload)
